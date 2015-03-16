@@ -148,7 +148,6 @@ int main(int argc, char* argv[])
 	cout << ":::::::::::::::::::::: StartChat ::::::::::::::::::::::" << endl << endl;
 
 	pthread_t Input_;
-
 	if(pthread_create(&Input_, NULL, Input, NULL) < 0)
 		cout << "SampleChat Error!" << endl;
 
