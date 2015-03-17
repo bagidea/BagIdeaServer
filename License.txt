@@ -1,10 +1,10 @@
 :::::::::::::::: BagIdeaServer ::::::::::::::::
-::		 This Program Server Engine by   	 ::
-:: 		BagIdea, No copy right @bagidea      ::
-::											 ::
-::	           |-- Contact --|				 ::
-::		   Tel: +6698-1050-136				 ::
-::		 Email: aodbboy@hotmail.com			 ::
-::											 ::
+::       This Program Server Engine by       ::
+::      BagIdea, No copy right @bagidea      ::
+::                                           ::
+::              |-- Contact --|              ::
+::            Tel: +6698-1050-136            ::
+::          Email: aodbboy@hotmail.com       ::
+::                                           ::
 ::    SamsungBagIdea(Mr.Thanawat Suriys)     ::
 :::::::::::::::::::::::::::::::::::::::::::::::
