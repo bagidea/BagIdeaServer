@@ -1,5 +1,5 @@
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <pthread.h>
 
 #include "BISlib/BIS_Server.h"
@@ -41,6 +41,10 @@ void* Listen(void* id)
 			if(bis.param.status == LOGIN_EVENT)
 			{
 				cout << bis.param.username << " has login." << endl;
+			}
+			else if(bis.param.status == CREATEROOM_EVENT)
+			{
+				cout << bis.param.username << " has create room. - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")" << endl;
 			}
 		}else{
 			if(bis.param.status == DISCONNECT_EVENT)

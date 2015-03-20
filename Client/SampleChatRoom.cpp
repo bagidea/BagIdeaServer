@@ -23,6 +23,9 @@ bool Exit = false;
 
 void* Input(void*)
 {
+	string room_name;
+	int maxUser;
+
 	while(!Exit)
 	{
 		if(bis.IsLogin())
@@ -32,7 +35,30 @@ void* Input(void*)
 			string strChk = message;
 			if(strChk != "-exit-")
 			{
-				bis.SendMessage(message, THIS_BIS);
+				if(strChk == "-create-")
+				{
+					cout << "     Room Name: ";
+					cin.getline(message, 50);
+					room_name = message;
+					cout << "     Max User: ";
+					cin.getline(message, 50);
+					maxUser = atoi(message);
+					bis.CreateRoom(room_name, maxUser);
+				}
+				else if(strChk == "-load-")
+				{
+
+				}
+				else if(strChk == "-join-")
+				{
+					cout << "     Room Name: ";
+					cin.getline(message, 50);
+					room_name = message;
+					if(!bis.JoinRoom(room_name))
+						cout << "     You has join room already. - " << bis.GetRoom();
+				}else{
+					bis.SendMessage(message, THIS_BIS);
+				}
 			}else{
 				bis.Disconnect();
 				Exit = true;
@@ -58,7 +84,8 @@ void Update(int argc_)
 				}
 				cin.getline(username, 50);
 
-				bis.Login(username);
+				if(!bis.Login(username))
+					cout << "     You has login already. - " << bis.GetUsername() << endl;
 			}
 			else if(bis.param.status ==  LOGIN_EXIST)
 			{
@@ -67,7 +94,8 @@ void Update(int argc_)
 					
 				cin.getline(username, 50);
 
-				bis.Login(username);
+				if(!bis.Login(username))
+					cout << "     You has login already. - " << bis.GetUsername() << endl;
 			}
 			else if(bis.param.status ==  LOGIN_COMPLETE)
 			{
@@ -80,6 +108,34 @@ void Update(int argc_)
 			{
 				if(bis.param.username != bis.GetUsername())
 					cout << bis.param.username << ": " << bis.param.message << endl;
+			}
+			else if(bis.param.status ==  CREATEROOM_COMPLETE)
+			{
+				if(bis.param.username != bis.GetUsername())
+				{
+					cout << "     " << bis.param.username << " has create room - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")"<< endl;
+				}else{
+					cout << "     Create room complete. - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")"<< endl;
+					bis.JoinRoom(bis.param.room);
+				}
+			}
+			else if(bis.param.status ==  CREATEROOM_FAIL)
+			{
+				cout << "     Room Exist." << endl;
+			}
+			else if(bis.param.status ==  JOINROOM_COMPLETE)
+			{
+				if(bis.param.room == bis.GetRoom())
+				{
+					if(bis.param.username != bis.GetUsername())
+						cout << "     " << bis.param.username << " has join room. [" << bis.param.countUser << "/" << bis.param.maxUser << "]" << endl;
+					else
+						cout << "     Join room complete. [" << bis.param.countUser << "/" << bis.param.maxUser << "]" << endl;
+				}
+			}
+			else if(bis.param.status ==  JOINROOM_FAIL)
+			{
+				cout << "     Can't join room." << endl;
 			}
 			else if(bis.param.status ==  DISCONNECT_EVENT)
 			{

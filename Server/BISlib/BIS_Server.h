@@ -1,12 +1,12 @@
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 
@@ -17,6 +17,12 @@
 #define LOGIN_EXIST "LOGIN_EXIST"
 #define LOGIN_COMPLETE "LOGIN_COMPLETE"
 #define SEND_MESSAGE "SEND_MESSAGE"
+#define CREATEROOM_EVENT "CREATEROOM_EVENT"
+#define CREATEROOM_COMPLETE "CREATEROOM_COMPLETE"
+#define CREATEROOM_FAIL "CREATEROOM_FAIL"
+#define JOINROOM_EVENT "JOINROOM_EVENT"
+#define JOINROOM_COMPLETE "JOINROOM_COMPLETE"
+#define JOINROOM_FAIL "JOINROOM_FAIL"
 #define DISCONNECT_EVENT "DISCONNECT_EVENT"
 #define THIS_BIS 0
 #define ROOM_BIS 1
@@ -32,6 +38,8 @@ public:
 		string status;
 		string ip;
 		string username;
+		string room;
+		int maxUser;
 		int* id;
 	}param;
 

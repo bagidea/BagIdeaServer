@@ -27,9 +27,30 @@ bool BIS_Client::Connect()
 
 bool BIS_Client::Login(string username)
 {
+	if(_username != "")
+		return false;
+
+	_usernameTemp = username;
 	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", LOGIN_EVENT, username.c_str());
 	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
-	_username = username;
+	return true;
+}
+
+void BIS_Client::CreateRoom(string roomName, int maxUser)
+{
+	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%d", CREATEROOM_EVENT, roomName.c_str(), maxUser);
+	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+}
+
+bool BIS_Client::JoinRoom(string roomName)
+{
+	if(_room != "")
+		return false;
+
+	_roomTemp = roomName;
+	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", JOINROOM_EVENT, roomName.c_str());
+	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	return true;
 }
 
 void BIS_Client::Disconnect()
@@ -81,8 +102,11 @@ bool BIS_Client::ReadMessage()
 			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.username = strVec[1];
 			param.status = LOGIN_COMPLETE;
-			if(param.username == _username)
+			if(param.username == _usernameTemp)
+			{
+				_username = param.username;
 				isLogin_ = true;
+			}
 		}
 		else if(strVec[0] == SEND_MESSAGE)
 		{
@@ -90,6 +114,33 @@ bool BIS_Client::ReadMessage()
 			param.username = strVec[1];
 			strVec[2] = AllVecToString(strVec, 2, "\n");
 			param.message = strVec[2];
+		}
+		else if(strVec[0] == CREATEROOM_COMPLETE)
+		{
+			param.status = CREATEROOM_COMPLETE;
+			param.username = strVec[1];
+			param.room = strVec[2];
+			param.maxUser = atoi(strVec[3].c_str());
+		}
+		else if(strVec[0] == CREATEROOM_FAIL)
+		{
+			param.status = CREATEROOM_FAIL;	
+		}
+		else if(strVec[0] == JOINROOM_COMPLETE)
+		{
+			param.status = JOINROOM_COMPLETE;
+			param.room = strVec[1];
+			param.username = strVec[2];
+			param.maxUser = atoi(strVec[3].c_str());
+			param.countUser = atoi(strVec[4].c_str());
+			if(param.username == _username && param.room == _roomTemp)
+			{
+				_room = _roomTemp;
+			}
+		}
+		else if(strVec[0] == JOINROOM_FAIL)
+		{
+			param.status = JOINROOM_FAIL;
 		}
 		else if(strVec[0] == DISCONNECT_EVENT)
 		{
@@ -138,4 +189,9 @@ bool BIS_Client::IsLogin()
 string BIS_Client::GetUsername()
 {
 	return _username;
+}
+
+string BIS_Client::GetRoom()
+{
+	return _room;
 }

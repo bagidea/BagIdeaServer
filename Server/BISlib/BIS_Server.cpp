@@ -48,6 +48,7 @@ string BIS_Server::AllVecToString(vector<string> vec, int index, string spStr)
 bool BIS_Server::ReadMessage(int id)
 {
 	string str;
+	char chr[10];
 	if((n = read(id, sockMessage, sizeof(sockMessage)-1)) > 0)
 	{
 		char its[50];
@@ -90,7 +91,51 @@ bool BIS_Server::ReadMessage(int id)
 			}
 			else if(strVec[1] == "ALL")
 			{
-				//All SendMessage
+				SendMessage(str, ALL_BIS, id);
+			}
+		}
+		else if(strVec[0] == CREATEROOM_EVENT)
+		{
+			param.status = CREATEROOM_EVENT;
+			if(!serverData.CreateRoom(strVec[1], atoi(strVec[2].c_str())))
+			{
+				SendMessage(CREATEROOM_FAIL, THIS_BIS, id);
+				return false;
+			}
+
+			param.username = serverData.GetUsernameFromID(id);
+			param.room = strVec[1];
+			param.maxUser = atoi(strVec[2].c_str());
+			str = CREATEROOM_COMPLETE;
+			str.append("\n");
+			str.append(param.username);
+			str.append("\n");
+			str.append(strVec[1]);
+			str.append("\n");
+			str.append(strVec[2]);
+			SendMessage(str, ALL_BIS, id);
+		}
+		else if(strVec[0] == JOINROOM_EVENT)
+		{
+			param.status = JOINROOM_EVENT;
+			if(!serverData.JoinRoom(id, strVec[1]))
+			{
+				SendMessage(JOINROOM_FAIL, THIS_BIS, id);
+			}else{
+				param.username = serverData.GetUsernameFromID(id);
+				str = JOINROOM_COMPLETE;
+				str.append("\n");
+				str.append(strVec[1]);
+				str.append("\n");
+				str.append(param.username);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetMaxUser(strVec[1]));
+				str.append(chr);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(strVec[1]));
+				str.append(chr);
+				str.append("\n");
+				SendMessage(str, ALL_BIS, id);
 			}
 		}
 		else if(strVec[0] == DISCONNECT_EVENT)
