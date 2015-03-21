@@ -3,19 +3,24 @@
 bool BIS_ServerObject::CreateRoom(string roomName, int maxUser)
 {	
 	int i;
-	if(nameRoomList_.size() != 0)
+	if(roomName != "" && maxUser > 0)
 	{
-		for(i = 0; i < nameRoomList_.size(); i++)
+		if(nameRoomList_.size() != 0)
 		{
-			if(nameRoomList_[i] == roomName)
+			for(i = 0; i < nameRoomList_.size(); i++)
 			{
-				return false;
+				if(nameRoomList_[i] == roomName)
+				{
+					return false;
+				}
 			}
 		}
+		nameRoomList_.push_back(roomName);
+		maxUserRoomList_.push_back(maxUser);
+		countUserRoomList_.push_back(0);
+	}else{
+		return false;
 	}
-	nameRoomList_.push_back(roomName);
-	maxUserRoomList_.push_back(maxUser);
-	countUserRoomList_.push_back(0);
 	return true;
 }
 
@@ -43,6 +48,83 @@ bool BIS_ServerObject::JoinRoom(int id, string roomName)
 				}
 			}
 			return false;
+		}
+	}
+	return false;
+}
+
+void BIS_ServerObject::LeaveRoom(int id)
+{
+	int i,a;
+	for(i = 0; i < idList_.size(); i++)
+	{
+		if(idList_[i] == id)
+		{
+			if(userRoomList_[i] != "")
+			{
+				for(a = 0; a < nameRoomList_.size(); i++)
+				{
+					if(nameRoomList_[a] == userRoomList_[i])
+					{
+						userRoomList_[i] = "";
+						countUserRoomList_[a]--;
+						break;
+					}
+				}
+			}
+			break;
+		}
+	}
+}
+
+string BIS_ServerObject::LoadRoom()
+{
+	int i;
+	char chr[10];
+	string str = "";
+	if(nameRoomList_.size() > 0)
+	{
+		for(i = 0; i < nameRoomList_.size(); i++)
+		{
+			str.append(nameRoomList_[i]);
+			str.append("\n");
+			snprintf(chr,sizeof(chr),"%d",maxUserRoomList_[i]);
+			str.append(chr);
+			str.append("\n");
+			snprintf(chr,sizeof(chr),"%d",countUserRoomList_[i]);
+			str.append(chr);
+			if(i < nameRoomList_.size()-1)
+				str.append("\n");
+		}
+	}else{
+		return NO_ROOM;
+	}
+	return str;
+}
+
+bool BIS_ServerObject::DestroyRoom(string roomName)
+{
+	int i,a,num;
+	for(i = 0; i < nameRoomList_.size(); i++)
+	{
+		if(nameRoomList_[i] == roomName)
+		{
+			num = countUserRoomList_[i];
+			for(a = 0; a < userRoomList_.size(); a++)
+			{
+				if(userRoomList_[a] == nameRoomList_[i])
+				{
+					userRoomList_[a] = "";
+					num--;
+					if(num <= 0)
+						break;
+				}
+			}
+
+			nameRoomList_.erase(nameRoomList_.begin()+i);
+			maxUserRoomList_.erase(maxUserRoomList_.begin()+i);
+			countUserRoomList_.erase(countUserRoomList_.begin()+i);
+			return true;
 		}
 	}
 	return false;

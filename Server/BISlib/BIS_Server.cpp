@@ -47,7 +47,7 @@ string BIS_Server::AllVecToString(vector<string> vec, int index, string spStr)
 
 bool BIS_Server::ReadMessage(int id)
 {
-	string str;
+	string str, strTemp;
 	char chr[10];
 	if((n = read(id, sockMessage, sizeof(sockMessage)-1)) > 0)
 	{
@@ -59,8 +59,9 @@ bool BIS_Server::ReadMessage(int id)
 
 		if(strVec[0] == LOGIN_EVENT)
 		{
-			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.status = LOGIN_EVENT;
+
+			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.username = strVec[1];
 
 			if(!serverData.CheckExistUsername(id,param.username))
@@ -77,7 +78,7 @@ bool BIS_Server::ReadMessage(int id)
 		else if(strVec[0] == SEND_MESSAGE)
 		{
 			param.status = SEND_MESSAGE;
-			string room;
+
 			strVec[2] = AllVecToString(strVec, 2, "\n");
 			str = SEND_MESSAGE;
 			str.append("\n");
@@ -86,8 +87,8 @@ bool BIS_Server::ReadMessage(int id)
 			str.append(strVec[2]);
 			if(strVec[1] == "THIS")
 			{
-				room = serverData.GetRoomFromID(id);
-				SendMessage(str, ROOM_BIS, id, room);
+				param.room = serverData.GetRoomFromID(id);
+				SendMessage(str, ROOM_BIS, id, param.room);
 			}
 			else if(strVec[1] == "ALL")
 			{
@@ -97,12 +98,12 @@ bool BIS_Server::ReadMessage(int id)
 		else if(strVec[0] == CREATEROOM_EVENT)
 		{
 			param.status = CREATEROOM_EVENT;
+
 			if(!serverData.CreateRoom(strVec[1], atoi(strVec[2].c_str())))
 			{
 				SendMessage(CREATEROOM_FAIL, THIS_BIS, id);
 				return false;
 			}
-
 			param.username = serverData.GetUsernameFromID(id);
 			param.room = strVec[1];
 			param.maxUser = atoi(strVec[2].c_str());
@@ -118,31 +119,109 @@ bool BIS_Server::ReadMessage(int id)
 		else if(strVec[0] == JOINROOM_EVENT)
 		{
 			param.status = JOINROOM_EVENT;
-			if(!serverData.JoinRoom(id, strVec[1]))
+
+			param.room = strVec[1];
+			if(!serverData.JoinRoom(id, param.room))
 			{
 				SendMessage(JOINROOM_FAIL, THIS_BIS, id);
 			}else{
 				param.username = serverData.GetUsernameFromID(id);
 				str = JOINROOM_COMPLETE;
 				str.append("\n");
-				str.append(strVec[1]);
+				str.append(param.room);
 				str.append("\n");
 				str.append(param.username);
 				str.append("\n");
-				snprintf(chr,sizeof(chr),"%d",serverData.GetMaxUser(strVec[1]));
+				snprintf(chr,sizeof(chr),"%d",serverData.GetMaxUser(param.room));
 				str.append(chr);
 				str.append("\n");
-				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(strVec[1]));
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
 				str.append(chr);
 				str.append("\n");
+				SendMessage(str, ROOM_BIS, id, param.room);
+			}
+		}
+		else if(strVec[0] == LEAVEROOM_EVENT)
+		{
+			param.status = LEAVEROOM_EVENT;
+
+			param.room = serverData.GetRoomFromID(id);
+			if(param.room != "")
+			{
+				param.username = serverData.GetUsernameFromID(id);
+				serverData.LeaveRoom(id);
+				str = LEAVEROOM_COMPLETE;
+				str.append("\n");
+				str.append(param.username);
+				str.append("\n");
+				str.append(param.room);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				SendMessage(str, ROOM_BIS, id, param.room, true);
+			}else{
+				str = LEAVEROOM_FAIL;
+				SendMessage(str, THIS_BIS, id);
+			}
+		}
+		else if(strVec[0] == LOADROOM_EVENT)
+		{
+			param.status = LOADROOM_EVENT;
+
+			str = LOADROOM_COMPLETE;
+			str.append("\n");
+			strTemp = serverData.LoadRoom();
+			str.append(strTemp);
+			SendMessage(str, THIS_BIS, id);
+		}
+		else if(strVec[0] == DESTROYROOM_EVENT)
+		{
+			param.status = DESTROYROOM_EVENT;
+
+			param.username = serverData.GetUsernameFromID(id);
+			param.room = strVec[1];
+			if(!serverData.DestroyRoom(param.room))
+			{
+				param.status = "";
+				str = DESTROYROOM_FAIL;
+				SendMessage(str, THIS_BIS, id);
+			}else{
+				str = DESTROYROOM_COMPLETE;
+				str.append("\n");
+				str.append(param.room);
+				str.append("\n");
+				str.append(param.username);
 				SendMessage(str, ALL_BIS, id);
 			}
 		}
 		else if(strVec[0] == DISCONNECT_EVENT)
 		{
 			param.status = DISCONNECT_EVENT;
+
 			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.username = strVec[1];
+
+			param.room = serverData.GetRoomFromID(id);
+			if(param.room != NO_ROOM)
+			{
+				serverData.LeaveRoom(id);
+				str = LEAVEROOM_COMPLETE;
+				str.append("\n");
+				str.append(param.username);
+				str.append("\n");
+				str.append(param.room);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				SendMessage(str, ROOM_BIS, id, param.room);
+			}
+
 			str = DISCONNECT_EVENT;
 			str.append("\n");
 			str.append(param.username);
@@ -152,9 +231,28 @@ bool BIS_Server::ReadMessage(int id)
 		}
 		return true;
 	}else{
-		//SendMessage(DISCONNECT_EVENT, ALL_BIS, id);
 		param.status = DISCONNECT_EVENT;
+
 		param.username = serverData.GetUsernameFromID(id);
+		param.room = serverData.GetRoomFromID(id);
+
+		if(param.room != NO_ROOM)
+		{
+			serverData.LeaveRoom(id);
+			str = LEAVEROOM_COMPLETE;
+			str.append("\n");
+			str.append(param.username);
+			str.append("\n");
+			str.append(param.room);
+			str.append("\n");
+			snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+			str.append(chr);
+			str.append("\n");
+			snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+			str.append(chr);
+			SendMessage(str, ROOM_BIS, id, param.room);
+		}
+
 		str = DISCONNECT_EVENT;
 		str.append("\n");
 		str.append(param.username);
@@ -164,17 +262,20 @@ bool BIS_Server::ReadMessage(int id)
 	return false;
 }
 
-bool BIS_Server::SendMessage(string msg, int to, int id, string room)
+bool BIS_Server::SendMessage(string msg, int to, int id, string room, bool andMe)
 {
 	int i;
 	vector<int> allID;
-	snprintf(sockMessage, sizeof(sockMessage), "%s", msg.c_str());
+	snprintf(sockMessage, sizeof(sockMessage), "%s\f", msg.c_str());
 	switch(to)
 	{
 		case THIS_BIS:
 			send(id, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 			break;
 		case ROOM_BIS:
+			if(andMe)
+				send(id, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+
 			allID = serverData.GetUserRoomID(room);
 			for(i = 0; i < allID.size(); i++)
 			{

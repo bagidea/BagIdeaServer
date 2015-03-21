@@ -14,6 +14,7 @@ char serverIP[15];
 int serverPort;
 
 string strTemp;
+string roomLeaveTemp;
 char username[50];
 char message[512];
 
@@ -45,9 +46,16 @@ void* Input(void*)
 					maxUser = atoi(message);
 					bis.CreateRoom(room_name, maxUser);
 				}
-				else if(strChk == "-load-")
+				else if(strChk == "-room-")
 				{
-
+					bis.LoadRoom();
+				}
+				else if(strChk == "-myroom-")
+				{
+					if(bis.GetRoom() != "")
+						cout << "     Your room: " << bis.GetRoom() << endl;
+					else
+						cout << "     You no room." << endl;
 				}
 				else if(strChk == "-join-")
 				{
@@ -56,6 +64,17 @@ void* Input(void*)
 					room_name = message;
 					if(!bis.JoinRoom(room_name))
 						cout << "     You has join room already. - " << bis.GetRoom();
+				}
+				else if(strChk == "-leave-")
+				{
+					roomLeaveTemp = bis.GetRoom();
+					bis.LeaveRoom();
+				}
+				else if(strChk == "-allchat-")
+				{
+					cout << "     Enter Message: ";
+					cin.getline(message, 50);
+					bis.SendMessage(message, ALL_BIS);
 				}else{
 					bis.SendMessage(message, THIS_BIS);
 				}
@@ -70,6 +89,7 @@ void* Input(void*)
 void Update(int argc_)
 {
 	int argc = argc_;
+	int i;
 
 	while(!Exit)
 	{
@@ -136,6 +156,42 @@ void Update(int argc_)
 			else if(bis.param.status ==  JOINROOM_FAIL)
 			{
 				cout << "     Can't join room." << endl;
+			}
+			else if(bis.param.status ==  LEAVEROOM_COMPLETE)
+			{
+				if(bis.param.username != bis.GetUsername())
+				{
+					cout << "     " << bis.param.username << " leave room." << endl;
+				}else{
+					cout << "     You has leave room." << endl;
+					if(bis.param.countUser == 0)
+						bis.DestroyRoom(roomLeaveTemp);
+				}
+			}
+			else if(bis.param.status ==  LEAVEROOM_FAIL)
+			{
+				cout << "     You can't leave room. Because you no room." << endl;
+			}
+			else if(bis.param.status ==  LOADROOM_COMPLETE)
+			{
+				if(bis.param.countRoom > 0)
+				{
+					cout << "     Room Count: " << bis.param.countRoom << endl;
+					for(i = 0; i < bis.param.countRoom; i++)
+					{
+						cout << "     - " << bis.param.roomNameList[i] << " [" << bis.param.roomCountUserList[i] << "/" << bis.param.roomMaxUserList[i] << "]" << endl;
+					}
+				}else{
+					cout << "     No room." << endl;
+				}
+			}
+			else if(bis.param.status ==  DESTROYROOM_COMPLETE)
+			{
+				cout << "     " << bis.param.username << " destroy room. - " << bis.param.room << endl;
+			}
+			else if(bis.param.status ==  DESTROYROOM_FAIL)
+			{
+				cout << "     Can't destroy room." << endl;
 			}
 			else if(bis.param.status ==  DISCONNECT_EVENT)
 			{

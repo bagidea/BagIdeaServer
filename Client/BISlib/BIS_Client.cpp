@@ -53,6 +53,24 @@ bool BIS_Client::JoinRoom(string roomName)
 	return true;
 }
 
+void BIS_Client::LeaveRoom()
+{
+	snprintf(sockMessage, sizeof(sockMessage), "%s", LEAVEROOM_EVENT);
+	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+}
+
+void BIS_Client::LoadRoom()
+{
+	snprintf(sockMessage, sizeof(sockMessage), "%s", LOADROOM_EVENT);
+	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+}
+
+void BIS_Client::DestroyRoom(string roomName)
+{
+	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", DESTROYROOM_EVENT, roomName.c_str());
+	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+}
+
 void BIS_Client::Disconnect()
 {
 	string str = DISCONNECT_EVENT;
@@ -83,77 +101,147 @@ string BIS_Client::AllVecToString(vector<string> vec, int index, string spStr)
 
 bool BIS_Client::ReadMessage()
 {
+	vector<string> strVecSP;
+	int i,sp;
 	if((n = read(sock_, sockMessage, sizeof(sockMessage)-1)) > 0)
 	{
 		sockMessage[n] = 0;
 
-		strVec = splitToVector(sockMessage, "\n");
+		strVecSP = splitToVector(sockMessage, "\f");
 
-		if(strVec[0] == CONNECT_COMPLETE)
+		for(sp = 0; sp < strVecSP.size()-1; sp++)
 		{
-			param.status = CONNECT_COMPLETE;
-		}
-		else if(strVec[0] == LOGIN_EXIST)
-		{
-			param.status = LOGIN_EXIST;
-		}
-		else if(strVec[0] == LOGIN_COMPLETE)
-		{
-			strVec[1] = AllVecToString(strVec, 1, "\n");
-			param.username = strVec[1];
-			param.status = LOGIN_COMPLETE;
-			if(param.username == _usernameTemp)
+			strVec = splitToVector(strVecSP[sp].c_str(), "\n");
+
+			if(strVec[0] == CONNECT_COMPLETE)
 			{
-				_username = param.username;
-				isLogin_ = true;
+				param.status = CONNECT_COMPLETE;
 			}
-		}
-		else if(strVec[0] == SEND_MESSAGE)
-		{
-			param.status = SEND_MESSAGE;
-			param.username = strVec[1];
-			strVec[2] = AllVecToString(strVec, 2, "\n");
-			param.message = strVec[2];
-		}
-		else if(strVec[0] == CREATEROOM_COMPLETE)
-		{
-			param.status = CREATEROOM_COMPLETE;
-			param.username = strVec[1];
-			param.room = strVec[2];
-			param.maxUser = atoi(strVec[3].c_str());
-		}
-		else if(strVec[0] == CREATEROOM_FAIL)
-		{
-			param.status = CREATEROOM_FAIL;	
-		}
-		else if(strVec[0] == JOINROOM_COMPLETE)
-		{
-			param.status = JOINROOM_COMPLETE;
-			param.room = strVec[1];
-			param.username = strVec[2];
-			param.maxUser = atoi(strVec[3].c_str());
-			param.countUser = atoi(strVec[4].c_str());
-			if(param.username == _username && param.room == _roomTemp)
+			else if(strVec[0] == LOGIN_EXIST)
 			{
-				_room = _roomTemp;
+				param.status = LOGIN_EXIST;
 			}
-		}
-		else if(strVec[0] == JOINROOM_FAIL)
-		{
-			param.status = JOINROOM_FAIL;
-		}
-		else if(strVec[0] == DISCONNECT_EVENT)
-		{
-			param.status = DISCONNECT_EVENT;
-			strVec[1] = AllVecToString(strVec, 1, "\n");
-			param.username = strVec[1];
-			if(param.username == _username)
+			else if(strVec[0] == LOGIN_COMPLETE)
 			{
-				close(sock_);
-				return false;
+				param.status = LOGIN_COMPLETE;
+
+				strVec[1] = AllVecToString(strVec, 1, "\n");
+				param.username = strVec[1];
+				if(param.username == _usernameTemp)
+				{
+					_username = param.username;
+					isLogin_ = true;
+				}
 			}
-		}else{
-			param.status = "";
+			else if(strVec[0] == SEND_MESSAGE)
+			{
+				param.status = SEND_MESSAGE;
+
+				param.username = strVec[1];
+				strVec[2] = AllVecToString(strVec, 2, "\n");
+				param.message = strVec[2];
+			}
+			else if(strVec[0] == CREATEROOM_COMPLETE)
+			{
+				param.status = CREATEROOM_COMPLETE;
+
+				param.username = strVec[1];
+				param.room = strVec[2];
+				param.maxUser = atoi(strVec[3].c_str());
+			}
+			else if(strVec[0] == CREATEROOM_FAIL)
+			{
+				param.status = CREATEROOM_FAIL;	
+			}
+			else if(strVec[0] == JOINROOM_COMPLETE)
+			{
+				param.status = JOINROOM_COMPLETE;
+
+				param.room = strVec[1];
+				param.username = strVec[2];
+				param.maxUser = atoi(strVec[3].c_str());
+				param.countUser = atoi(strVec[4].c_str());
+				if(param.username == _username && param.room == _roomTemp)
+				{
+					_room = _roomTemp;
+				}
+			}
+			else if(strVec[0] == LEAVEROOM_COMPLETE)
+			{
+				if(strVec[2] == _room)
+				{
+					param.status = LEAVEROOM_COMPLETE;
+
+					param.username = strVec[1];
+					param.maxUser = atoi(strVec[2].c_str());
+					param.countUser = atoi(strVec[3].c_str());
+					if(param.username == _username)
+					{
+						_room = "";
+						_roomTemp = "";
+					}
+				}else{
+					param.status = "";
+				}
+			}
+			else if(strVec[0] == JOINROOM_FAIL)
+			{
+				param.status = JOINROOM_FAIL;
+			}
+			else if(strVec[0] == LEAVEROOM_FAIL)
+			{
+				param.status = LEAVEROOM_FAIL;
+			}
+			else if(strVec[0] == LOADROOM_COMPLETE)
+			{
+				param.status = LOADROOM_COMPLETE;
+
+				param.roomNameList.clear();
+				param.roomMaxUserList.clear();
+				param.roomCountUserList.clear();
+
+				if(strVec[1] != NO_ROOM)
+				{
+					strVec[1] = AllVecToString(strVec, 1, "\n");
+					strVec = splitToVector(strVec[1].c_str(), "\n");
+
+					for(i = 0; i < strVec.size(); i+=3)
+					{
+						param.roomNameList.push_back(strVec[i]);
+						param.roomMaxUserList.push_back(atoi(strVec[i+1].c_str()));
+						param.roomCountUserList.push_back(atoi(strVec[i+2].c_str()));
+					}
+
+					param.countRoom = param.roomNameList.size();
+				}else{
+					param.countRoom = 0;
+				}
+			}
+			else if(strVec[0] == DESTROYROOM_COMPLETE)
+			{
+				param.status = DESTROYROOM_COMPLETE;
+
+				param.room = strVec[1];
+				param.username = strVec[2];
+			}
+			else if(strVec[0] == DESTROYROOM_FAIL)
+			{
+				param.status = DESTROYROOM_FAIL;
+			}
+			else if(strVec[0] == DISCONNECT_EVENT)
+			{
+				param.status = DISCONNECT_EVENT;
+
+				strVec[1] = AllVecToString(strVec, 1, "\n");
+				param.username = strVec[1];
+				if(param.username == _username)
+				{
+					close(sock_);
+					return false;
+				}
+			}else{
+				param.status = "";
+			}
 		}
 		return true;
 	}else{

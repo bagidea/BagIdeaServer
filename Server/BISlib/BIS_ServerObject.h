@@ -1,6 +1,9 @@
 #include <iostream>
+#include <cstdio>
 #include <string>
 #include <vector>
+
+#define NO_ROOM "|-(Not Have Room)-|"
 
 using namespace std;
 
@@ -9,6 +12,9 @@ class BIS_ServerObject
 public:
 	bool CreateRoom(string roomName, int maxUser);
 	bool JoinRoom(int id, string roomName);
+	void LeaveRoom(int id);
+	string LoadRoom();
+	bool DestroyRoom(string roomName);
 	bool CheckExistUsername(int id, string username);
 	void DestroyUserFromID(int id);
 	vector<int> GetAllID();

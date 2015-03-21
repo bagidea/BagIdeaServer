@@ -46,6 +46,10 @@ void* Listen(void* id)
 			{
 				cout << bis.param.username << " has create room. - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")" << endl;
 			}
+			else if(bis.param.status == DESTROYROOM_EVENT)
+			{
+				cout << bis.param.username << " has destroy room. - " << bis.param.room << endl;
+			}
 		}else{
 			if(bis.param.status == DISCONNECT_EVENT)
 			{
