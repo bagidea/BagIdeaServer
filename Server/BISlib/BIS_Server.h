@@ -52,6 +52,8 @@ public:
 		int* id;
 	}param;
 
+	BIS_Server();
+
 	bool SocketServer(int port);
 	bool Bind();
 
@@ -61,6 +63,10 @@ public:
 	bool SendMessage(string msg, int to, int id, string room = "", bool andMe = false);
 
 	bool hasConnect();
+
+	void (*LoginEvent)(string username);
+	void (*CreateRoomEvent)(string username, string roomName, int maxUser);
+	void (*DestroyRoomEvent)(string username, string roomName);
 private:
 	int connect_,n;
 	int listen_;

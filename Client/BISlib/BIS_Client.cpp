@@ -2,6 +2,7 @@
 
 BIS_Client::BIS_Client()
 {
+	isLogin_ = false;
 	ConnectComplete = NULL;
 	LoginComplete = NULL;
 	LoginFail = NULL;
@@ -46,69 +47,69 @@ bool BIS_Client::Connect()
 
 bool BIS_Client::Login(string username)
 {
-	if(isLogin_ && _username != "")
+	if(isLogin_ == true && username != "")
 		return false;
 
 	_usernameTemp = username;
-	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", LOGIN_EVENT, username.c_str());
+	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\f", LOGIN_EVENT, username.c_str());
 	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	return true;
 }
 
 void BIS_Client::CreateRoom(string roomName, int maxUser)
 {
-	if(isLogin_)
+	if(isLogin_ == true)
 	{
-		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%d", CREATEROOM_EVENT, roomName.c_str(), maxUser);
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%d\f", CREATEROOM_EVENT, roomName.c_str(), maxUser);
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
 
 bool BIS_Client::JoinRoom(string roomName)
 {
-	if(!isLogin_ || _room != "")
+	if(isLogin_  == false || _room != "")
 		return false;
 
 	_roomTemp = roomName;
-	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", JOINROOM_EVENT, roomName.c_str());
+	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\f", JOINROOM_EVENT, roomName.c_str());
 	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	return true;
 }
 
 void BIS_Client::LeaveRoom()
 {
-	if(isLogin_)
+	if(isLogin_ == true)
 	{
-		snprintf(sockMessage, sizeof(sockMessage), "%s", LEAVEROOM_EVENT);
+		snprintf(sockMessage, sizeof(sockMessage), "%s\f", LEAVEROOM_EVENT);
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
 
 void BIS_Client::LoadRoom()
 {
-	if(isLogin_)
+	if(isLogin_  == true)
 	{
-		snprintf(sockMessage, sizeof(sockMessage), "%s", LOADROOM_EVENT);
+		snprintf(sockMessage, sizeof(sockMessage), "%s\f", LOADROOM_EVENT);
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
 
 void BIS_Client::DestroyRoom(string roomName)
 {
-	if(isLogin_)
+	if(isLogin_  == true)
 	{
-		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", DESTROYROOM_EVENT, roomName.c_str());
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\f", DESTROYROOM_EVENT, roomName.c_str());
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
 
 void BIS_Client::Disconnect()
 {
-	if(isLogin_)
+	if(isLogin_  == true)
 	{
 		string str = DISCONNECT_EVENT;
 		string username = _username;
-		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", str.c_str(),username.c_str());
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\f", str.c_str(),username.c_str());
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
@@ -316,6 +317,8 @@ bool BIS_Client::ReadMessage()
 				if(param.username == _username)
 				{
 					close(sock_);
+					isLogin_ = false;
+					_username = "";
 				}
 
 				if(DisconnectComplete != NULL)
@@ -340,11 +343,11 @@ bool BIS_Client::SendMessage(string msg, int to)
 	switch(to)
 	{
 		case THIS_BIS:
-			snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%s", SEND_MESSAGE, "THIS", msg.c_str());
+			snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%s\f", SEND_MESSAGE, "THIS", msg.c_str());
 			send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 			break;
 		case ALL_BIS:
-			snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%s", SEND_MESSAGE, "ALL", msg.c_str());
+			snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%s\f", SEND_MESSAGE, "ALL", msg.c_str());
 			send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 			break;
 		default:

@@ -16,18 +16,19 @@ bool Exit = false;
 
 void* Listen(void*);
 
-void Connect()
+void LoginEvent(string userName)
 {
-	while(!Exit)
-	{
-		if(bis.hasConnect())
-		{
-			pthread_t st;
-			cout << "IP: " << bis.param.ip << " has Connected." << endl;
-			if(pthread_create(&st, NULL, Listen, (void*)bis.param.id) < 0)
-				cout << "Server Error Connection." << endl;
-		}
-	}
+	cout << userName << " has login." << endl;
+}
+
+void CreateRoomEvent(string userName, string room, int maxUser)
+{
+	cout << userName << " has create room. - " << room << " : MaxUser(" << maxUser << ")" << endl;
+}
+
+void DestroyRoomEvent(string userName, string room)
+{
+	cout << userName << " has destroy room. - " << room << endl;
 }
 
 void* Listen(void* id)
@@ -36,23 +37,11 @@ void* Listen(void* id)
 	int id_ = *(int*)id;
 	while(Online)
 	{
-		if(bis.ReadMessage(id_))
+		if(!bis.ReadMessage(id_))
 		{
-			if(bis.param.status == LOGIN_EVENT)
-			{
-				cout << bis.param.username << " has login." << endl;
-			}
-			else if(bis.param.status == CREATEROOM_EVENT)
-			{
-				cout << bis.param.username << " has create room. - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")" << endl;
-			}
-			else if(bis.param.status == DESTROYROOM_EVENT)
-			{
-				cout << bis.param.username << " has destroy room. - " << bis.param.room << endl;
-			}
-		}else{
 			if(bis.param.status == DISCONNECT_EVENT)
 			{
+
 				cout << bis.param.username << " Disconnect." << endl;
 				free(id);
 				Online = false;
@@ -63,6 +52,10 @@ void* Listen(void* id)
 
 int main(int argc, char* argv[])
 {
+	bis.LoginEvent = &LoginEvent;
+	bis.CreateRoomEvent = &CreateRoomEvent;
+	bis.DestroyRoomEvent = &DestroyRoomEvent;
+
 	switch(argc)
 	{
 		case 2:
@@ -96,7 +89,16 @@ int main(int argc, char* argv[])
 
 	cout << "::::::::::::::::::::: StartServer :::::::::::::::::::::" << endl << endl;
 
-	Connect();
+	while(!Exit)
+	{
+		if(bis.hasConnect())
+		{
+			pthread_t st;
+			cout << "IP: " << bis.param.ip << " has Connected." << endl;
+			if(pthread_create(&st, NULL, Listen, (void*)bis.param.id) < 0)
+				cout << "Server Error Connection." << endl;
+		}
+	}
 
 	return 0;
 }

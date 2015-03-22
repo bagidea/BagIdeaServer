@@ -41,74 +41,76 @@ void* Input(void*)
 	}
 }
 
-void Update(int argc_)
+void ConnectComplete()
 {
-	int argc = argc_;
+	cout << "     Username: ";
+	cin.getline(username, 50);
 
-	while(!Exit)
+	if(!bis.Login(username))
+		cout << "     You has login already. - " << bis.GetUsername() << endl;
+}
+
+void LoginComplete(string userName)
+{
+	if(userName != bis.GetUsername())
+		cout << "     " << userName << " has Login." << endl;
+	else
+		cout << "     Login Complete." << endl << endl << "-------------------------------------------------------" << endl << endl;
+}
+
+void LoginFail(string status)
+{
+	if(status ==  LOGIN_EXIST || status ==  LOGIN_FAIL)
 	{
-		if(bis.ReadMessage())
-		{
-			if(bis.param.status ==  CONNECT_COMPLETE)
-			{
-				cout << "     Username: ";
-				if(argc < 3)
-				{
-					cin.ignore();
-				}
-				cin.getline(username, 50);
+		if(status ==  LOGIN_EXIST)
+			cout << "     Login Exist." << endl;
+		else if(status ==  LOGIN_FAIL)
+			cout << "     Login Fail." << endl;
 
-				bis.Login(username);
-			}
-			else if(bis.param.status ==  LOGIN_EXIST || bis.param.status ==  LOGIN_FAIL)
-			{
-				if(bis.param.status ==  LOGIN_EXIST)
-					cout << "     Login Exist." << endl;
-				else if(bis.param.status ==  LOGIN_FAIL)
-					cout << "     Login Fail." << endl;
-
-				cout << "     Username: ";
+		cout << "     Username: ";
 					
-				cin.getline(username, 50);
+		cin.getline(username, 50);
 
-				if(!bis.Login(username))
-					cout << "     You has login already. - " << bis.GetUsername() << endl;
-			}
-			else if(bis.param.status ==  LOGIN_COMPLETE)
-			{
-				if(bis.param.username != bis.GetUsername())
-					cout << "     " << bis.param.username << " has Login." << endl;
-				else
-					cout << "     Login Complete." << endl << endl << "-------------------------------------------------------" << endl << endl;
-			}
-			else if(bis.param.status ==  SEND_MESSAGE)
-			{
-				if(bis.param.username != bis.GetUsername())
-					cout << bis.param.username << ": " << bis.param.message << endl;
-			}
-			else if(bis.param.status ==  DISCONNECT_EVENT)
-			{
-				cout << "     " << bis.param.username << " Disconnect." << endl;
-			}
-		}else{
-			if(bis.param.status ==  DISCONNECT_EVENT)
-			{
-				cout << "     Disconnect." << endl;
-				Exit = true;
-				break;
-			}
-			else if(bis.param.status ==  SERVER_ERROR)
-			{
-				cout << "     Server Dead." << endl;
-				Exit = true;
-				break;
-			}
-		}
+		if(!bis.Login(username))
+			cout << "     You has login already. - " << bis.GetUsername() << endl;
 	}
+}
+
+void MessageUpdate(string userName, string msg)
+{
+	if(userName != bis.GetUsername())
+		cout << userName << ": " << msg << endl;
+}
+
+void DisconnectComplete(string userName)
+{
+	if(userName != bis.GetUsername())
+	{
+		cout << "     " << userName << " Disconnect." << endl;
+	}else{
+		cout << "     Disconnect." << endl;
+		Exit = true;
+	}
+}
+
+void ServerError()
+{
+	cout << "     Server Dead." << endl;
+	Exit = true;
 }
 
 int main(int argc, char* argv[])
 {
+	char Port_[4];
+	
+	bis.ConnectComplete = &ConnectComplete;
+	bis.LoginComplete = &LoginComplete;
+	bis.LoginFail = &LoginFail;
+	bis.MessageUpdate = &MessageUpdate;
+	bis.DisconnectComplete = &DisconnectComplete;
+	bis.ServerError = &ServerError;
+
+
 	switch(argc)
 	{
 		case 3:
@@ -121,14 +123,16 @@ int main(int argc, char* argv[])
 			strcpy(serverIP, argv[1]);
 			cout << "\nServer IP: " << serverIP << endl;
 			cout << "Server Port: ";
-			cin >> serverPort;
+			cin >> Port_;
+			serverPort = atoi(Port_);
 			cout << endl;
 			break;
 		default:
 			cout << "\nServer IP: ";
 			cin.getline(serverIP, 15);
 			cout << "Server Port: ";
-			cin >> serverPort;
+			cin >> Port_;
+			serverPort = atoi(Port_);
 			cout << endl;
 	}
 
@@ -156,7 +160,10 @@ int main(int argc, char* argv[])
 	if(pthread_create(&Input_, NULL, Input, NULL) < 0)
 		cout << "SampleChat Error!" << endl;
 
-	Update(argc);
+	while(!Exit)
+	{
+		bis.ReadMessage();
+	}
 
 	cout << endl << ":::::::::::::::::::::: EndProgram :::::::::::::::::::::" << endl << endl;
 

@@ -79,6 +79,8 @@ void* Input(void*)
 					bis.SendMessage(message, THIS_BIS);
 				}
 			}else{
+				if(bis.GetRoom() != "")
+					bis.DestroyRoom(bis.GetRoom());
 				bis.Disconnect();
 				Exit = true;
 			}
@@ -218,17 +220,6 @@ void ServerError()
 	Exit = true;
 }
 
-void Update(int argc_)
-{
-	int argc = argc_;
-	int i;
-
-	while(!Exit)
-	{
-		bis.ReadMessage();
-	}
-}
-
 int main(int argc, char* argv[])
 {
 	char Port_[4];
@@ -298,7 +289,10 @@ int main(int argc, char* argv[])
 	if(pthread_create(&Input_, NULL, Input, NULL) < 0)
 		cout << "SampleChat Error!" << endl;
 
-	Update(argc);
+	while(!Exit)
+	{
+		bis.ReadMessage();
+	}
 
 	cout << endl << ":::::::::::::::::::::: EndProgram :::::::::::::::::::::" << endl << endl;
 

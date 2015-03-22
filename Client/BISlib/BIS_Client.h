@@ -47,20 +47,6 @@ struct RoomObject
 class BIS_Client
 {
 public:
-	struct Parameter
-	{
-		string status;
-		string username;
-		string message;
-		string room;
-		int maxUser;
-		int countUser;
-		int countRoom;
-		vector<string> roomNameList;
-		vector<int> roomMaxUserList;
-		vector<int> roomCountUserList;
-	}param;
-
 	BIS_Client();
 
 	bool Socket(char* serverIP, int serverPort);
@@ -98,6 +84,20 @@ public:
 	void (*DisconnectComplete)(string username);
 	void (*ServerError)();
 private:
+	struct Parameter
+	{
+		string status;
+		string username;
+		string message;
+		string room;
+		int maxUser;
+		int countUser;
+		int countRoom;
+		vector<string> roomNameList;
+		vector<int> roomMaxUserList;
+		vector<int> roomCountUserList;
+	}param;
+
 	int sock_,n;
 	sockaddr_in server_;
 	bool isLogin_;
