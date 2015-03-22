@@ -186,14 +186,20 @@ vector<int> BIS_ServerObject::GetUserRoomID(string room)
 string BIS_ServerObject::GetUsernameFromID(int id)
 {
 	int i;
+	bool chk = false;
 	for(i = 0; i < idList_.size(); i++)
 	{
 		if(idList_[i] == id)
 		{
+			chk = true;
 			break;
 		}
 	}
-	return usernameList_[i];
+
+	if(chk)
+		return usernameList_[i];
+	else
+		return "";
 }
 
 int BIS_ServerObject::GetIDFromUsername(string username)
@@ -212,14 +218,20 @@ int BIS_ServerObject::GetIDFromUsername(string username)
 string BIS_ServerObject::GetRoomFromID(int id)
 {	
 	int i;
+	bool chk;
 	for(i = 0; i < idList_.size(); i++)
 	{
 		if(idList_[i] == id)
 		{
+			chk = true;
 			break;
 		}
 	}
-	return userRoomList_[i];
+
+	if(chk)
+		return userRoomList_[i];
+	else
+		return "";
 }
 
 int BIS_ServerObject::GetMaxUser(string roomName)

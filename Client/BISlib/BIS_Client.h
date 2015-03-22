@@ -12,6 +12,7 @@
 #define CONNECT_COMPLETE "CONNECT_COMPLETE"
 #define LOGIN_EVENT "LOGIN_EVENT"
 #define LOGIN_EXIST "LOGIN_EXIST"
+#define LOGIN_FAIL "LOGIN_FAIL"
 #define LOGIN_COMPLETE "LOGIN_COMPLETE"
 #define SEND_MESSAGE "SEND_MESSAGE"
 #define CREATEROOM_EVENT "CREATEROOM_EVENT"
@@ -36,6 +37,13 @@
 
 using namespace std;
 
+struct RoomObject
+{
+	string roomName;
+	int maxUser;
+	int countUser;
+};
+
 class BIS_Client
 {
 public:
@@ -52,6 +60,8 @@ public:
 		vector<int> roomMaxUserList;
 		vector<int> roomCountUserList;
 	}param;
+
+	BIS_Client();
 
 	bool Socket(char* serverIP, int serverPort);
 	bool Connect();
@@ -71,6 +81,22 @@ public:
 	bool IsLogin();
 	string GetUsername();
 	string GetRoom();
+
+	void (*ConnectComplete)();
+	void (*LoginComplete)(string username);
+	void (*LoginFail)(string status);
+	void (*MessageUpdate)(string username, string message);
+	void (*CreateRoomComplete)(string username, string roomName, int maxUser);
+	void (*CreateRoomFail)();
+	void (*JoinComplete)(string username, string roomName, int maxUser, int countUser);
+	void (*JoinFail)();
+	void (*LeaveComplete)(string username, int maxUser, int countUser);
+	void (*LeaveFail)();
+	void (*LoadRoomComplete)(int countRoom, vector<RoomObject*> roomObject);
+	void (*DestroyRoomComplete)(string username, string roomName);
+	void (*DestroyRoomFail)();
+	void (*DisconnectComplete)(string username);
+	void (*ServerError)();
 private:
 	int sock_,n;
 	sockaddr_in server_;
@@ -85,4 +111,6 @@ private:
 
 	char sockMessage[1024];
 	vector<string> strVec;
+	vector<RoomObject*> roomObject_;
+	RoomObject* roomOb;
 };

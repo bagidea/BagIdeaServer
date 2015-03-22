@@ -60,14 +60,19 @@ void Update(int argc_)
 
 				bis.Login(username);
 			}
-			else if(bis.param.status ==  LOGIN_EXIST)
+			else if(bis.param.status ==  LOGIN_EXIST || bis.param.status ==  LOGIN_FAIL)
 			{
-				cout << "     Login Exist." << endl;
+				if(bis.param.status ==  LOGIN_EXIST)
+					cout << "     Login Exist." << endl;
+				else if(bis.param.status ==  LOGIN_FAIL)
+					cout << "     Login Fail." << endl;
+
 				cout << "     Username: ";
 					
 				cin.getline(username, 50);
 
-				bis.Login(username);
+				if(!bis.Login(username))
+					cout << "     You has login already. - " << bis.GetUsername() << endl;
 			}
 			else if(bis.param.status ==  LOGIN_COMPLETE)
 			{

@@ -51,12 +51,11 @@ bool BIS_Server::ReadMessage(int id)
 	char chr[10];
 	if((n = read(id, sockMessage, sizeof(sockMessage)-1)) > 0)
 	{
-		char its[50];
-
 		sockMessage[n] = 0;
 
-		strVec = splitToVector(sockMessage, "\n");
+		char its[50];
 
+		strVec = splitToVector(sockMessage, "\n");
 		if(strVec[0] == LOGIN_EVENT)
 		{
 			param.status = LOGIN_EVENT;
@@ -64,16 +63,21 @@ bool BIS_Server::ReadMessage(int id)
 			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.username = strVec[1];
 
-			if(!serverData.CheckExistUsername(id,param.username))
+			if(param.username != "")
 			{
-				SendMessage(LOGIN_EXIST, THIS_BIS, id);
-				return false;
+				if(!serverData.CheckExistUsername(id,param.username))
+				{
+					SendMessage(LOGIN_EXIST, THIS_BIS, id);
+				}else{
+					str = LOGIN_COMPLETE;
+					str.append("\n");
+					str.append(param.username);
+					SendMessage(str, ALL_BIS, id);
+				}
+			}else{
+				SendMessage(LOGIN_FAIL, THIS_BIS, id);
+				param.status = "";
 			}
-
-			str = LOGIN_COMPLETE;
-			str.append("\n");
-			str.append(param.username);
-			SendMessage(str, ALL_BIS, id);
 		}
 		else if(strVec[0] == SEND_MESSAGE)
 		{
@@ -102,19 +106,19 @@ bool BIS_Server::ReadMessage(int id)
 			if(!serverData.CreateRoom(strVec[1], atoi(strVec[2].c_str())))
 			{
 				SendMessage(CREATEROOM_FAIL, THIS_BIS, id);
-				return false;
+			}else{
+				param.username = serverData.GetUsernameFromID(id);
+				param.room = strVec[1];
+				param.maxUser = atoi(strVec[2].c_str());
+				str = CREATEROOM_COMPLETE;
+				str.append("\n");
+				str.append(param.username);
+				str.append("\n");
+				str.append(strVec[1]);
+				str.append("\n");
+				str.append(strVec[2]);
+				SendMessage(str, ALL_BIS, id);
 			}
-			param.username = serverData.GetUsernameFromID(id);
-			param.room = strVec[1];
-			param.maxUser = atoi(strVec[2].c_str());
-			str = CREATEROOM_COMPLETE;
-			str.append("\n");
-			str.append(param.username);
-			str.append("\n");
-			str.append(strVec[1]);
-			str.append("\n");
-			str.append(strVec[2]);
-			SendMessage(str, ALL_BIS, id);
 		}
 		else if(strVec[0] == JOINROOM_EVENT)
 		{
@@ -145,10 +149,11 @@ bool BIS_Server::ReadMessage(int id)
 		{
 			param.status = LEAVEROOM_EVENT;
 
+			param.username = serverData.GetUsernameFromID(id);
 			param.room = serverData.GetRoomFromID(id);
+
 			if(param.room != "")
 			{
-				param.username = serverData.GetUsernameFromID(id);
 				serverData.LeaveRoom(id);
 				str = LEAVEROOM_COMPLETE;
 				str.append("\n");
@@ -203,9 +208,9 @@ bool BIS_Server::ReadMessage(int id)
 
 			strVec[1] = AllVecToString(strVec, 1, "\n");
 			param.username = strVec[1];
-
 			param.room = serverData.GetRoomFromID(id);
-			if(param.room != NO_ROOM)
+			
+			if(param.room != "")
 			{
 				serverData.LeaveRoom(id);
 				str = LEAVEROOM_COMPLETE;
@@ -234,30 +239,35 @@ bool BIS_Server::ReadMessage(int id)
 		param.status = DISCONNECT_EVENT;
 
 		param.username = serverData.GetUsernameFromID(id);
-		param.room = serverData.GetRoomFromID(id);
-
-		if(param.room != NO_ROOM)
+		if(param.username != "")
 		{
-			serverData.LeaveRoom(id);
-			str = LEAVEROOM_COMPLETE;
+			param.room = serverData.GetRoomFromID(id);
+
+			if(param.room != "")
+			{
+				serverData.LeaveRoom(id);
+				str = LEAVEROOM_COMPLETE;
+				str.append("\n");
+				str.append(param.username);
+				str.append("\n");
+				str.append(param.room);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				str.append("\n");
+				snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
+				str.append(chr);
+				SendMessage(str, ROOM_BIS, id, param.room);
+			}
+
+			str = DISCONNECT_EVENT;
 			str.append("\n");
 			str.append(param.username);
-			str.append("\n");
-			str.append(param.room);
-			str.append("\n");
-			snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
-			str.append(chr);
-			str.append("\n");
-			snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
-			str.append(chr);
-			SendMessage(str, ROOM_BIS, id, param.room);
+			SendMessage(str, ALL_BIS, id);
+			serverData.DestroyUserFromID(id);
+		}else{
+			param.status = "";
 		}
-
-		str = DISCONNECT_EVENT;
-		str.append("\n");
-		str.append(param.username);
-		SendMessage(str, ALL_BIS, id);
-		serverData.DestroyUserFromID(id);
 	}
 	return false;
 }

@@ -63,7 +63,7 @@ void* Input(void*)
 					cin.getline(message, 50);
 					room_name = message;
 					if(!bis.JoinRoom(room_name))
-						cout << "     You has join room already. - " << bis.GetRoom();
+						cout << "     You has join room already. - " << bis.GetRoom() << endl;
 				}
 				else if(strChk == "-leave-")
 				{
@@ -86,6 +86,138 @@ void* Input(void*)
 	}
 }
 
+void ConnectComplete()
+{
+	cout << "     Username: ";
+	cin.getline(username, 50);
+
+	if(!bis.Login(username))
+		cout << "     You has login already. - " << bis.GetUsername() << endl;
+}
+
+void LoginComplete(string userName)
+{
+	if(userName != bis.GetUsername())
+		cout << "     " << userName << " has Login." << endl;
+	else
+		cout << "     Login Complete." << endl << endl << "-------------------------------------------------------" << endl << endl;
+}
+
+void LoginFail(string status)
+{
+	if(status ==  LOGIN_EXIST || status ==  LOGIN_FAIL)
+	{
+		if(status ==  LOGIN_EXIST)
+			cout << "     Login Exist." << endl;
+		else if(status ==  LOGIN_FAIL)
+			cout << "     Login Fail." << endl;
+
+		cout << "     Username: ";
+					
+		cin.getline(username, 50);
+
+		if(!bis.Login(username))
+			cout << "     You has login already. - " << bis.GetUsername() << endl;
+	}
+}
+
+void MessageUpdate(string userName, string msg)
+{
+	if(userName != bis.GetUsername())
+		cout << userName << ": " << msg << endl;
+}
+
+void CreateRoomComplete(string userName, string room, int maxUser)
+{
+	if(userName != bis.GetUsername())
+	{
+		cout << "     " << userName << " has create room - " << room << " : MaxUser(" << maxUser << ")"<< endl;
+	}else{
+		cout << "     Create room complete. - " << room << " : MaxUser(" << maxUser << ")"<< endl;
+		bis.JoinRoom(room);
+	}
+}
+
+void CreateRoomFail()
+{
+	cout << "     Room Exist." << endl;
+}
+
+void JoinComplete(string userName, string room, int maxUser, int countUser)
+{
+	if(room == bis.GetRoom())
+	{
+		if(userName != bis.GetUsername())
+			cout << "     " << userName << " has join room. [" << countUser << "/" << maxUser << "]" << endl;
+		else
+			cout << "     Join room complete. [" << countUser << "/" << maxUser << "]" << endl;
+	}
+}
+
+void JoinFail()
+{
+	cout << "     Can't join room." << endl;
+}
+
+void LeaveComplete(string userName, int maxUser, int countUser)
+{
+	if(userName != bis.GetUsername())
+	{
+		cout << "     " << userName << " leave room." << endl;
+	}else{
+		cout << "     You has leave room." << endl;
+		if(countUser == 0)
+			bis.DestroyRoom(roomLeaveTemp);
+	}
+}
+
+void LeaveFail()
+{
+	cout << "     You can't leave room. Because you no room." << endl;
+}
+
+void LoadRoomComplete(int countRoom, vector<RoomObject*> room)
+{
+	int i;
+	if(countRoom > 0)
+	{
+		cout << "     Room Count: " << countRoom << endl;
+		for(i = 0; i < countRoom; i++)
+		{
+			cout << "     - " << room[i]->roomName << " [" << room[i]->countUser << "/" << room[i]->maxUser << "]" << endl;
+		}
+	}else{
+		cout << "     No room." << endl;
+	}
+}
+
+void DestroyRoomComplete(string userName, string room)
+{
+	cout << "     " << userName << " destroy room. - " << room << endl;
+}
+
+void DestroyRoomFail()
+{
+	cout << "     Can't destroy room." << endl;
+}
+
+void DisconnectComplete(string userName)
+{
+	if(userName != bis.GetUsername())
+	{
+		cout << "     " << userName << " Disconnect." << endl;
+	}else{
+		cout << "     Disconnect." << endl;
+		Exit = true;
+	}
+}
+
+void ServerError()
+{
+	cout << "     Server Dead." << endl;
+	Exit = true;
+}
+
 void Update(int argc_)
 {
 	int argc = argc_;
@@ -93,129 +225,30 @@ void Update(int argc_)
 
 	while(!Exit)
 	{
-		if(bis.ReadMessage())
-		{
-			if(bis.param.status ==  CONNECT_COMPLETE)
-			{
-				cout << "     Username: ";
-				if(argc < 3)
-				{
-					cin.ignore();
-				}
-				cin.getline(username, 50);
-
-				if(!bis.Login(username))
-					cout << "     You has login already. - " << bis.GetUsername() << endl;
-			}
-			else if(bis.param.status ==  LOGIN_EXIST)
-			{
-				cout << "     Login Exist." << endl;
-				cout << "     Username: ";
-					
-				cin.getline(username, 50);
-
-				if(!bis.Login(username))
-					cout << "     You has login already. - " << bis.GetUsername() << endl;
-			}
-			else if(bis.param.status ==  LOGIN_COMPLETE)
-			{
-				if(bis.param.username != bis.GetUsername())
-					cout << "     " << bis.param.username << " has Login." << endl;
-				else
-					cout << "     Login Complete." << endl << endl << "-------------------------------------------------------" << endl << endl;
-			}
-			else if(bis.param.status ==  SEND_MESSAGE)
-			{
-				if(bis.param.username != bis.GetUsername())
-					cout << bis.param.username << ": " << bis.param.message << endl;
-			}
-			else if(bis.param.status ==  CREATEROOM_COMPLETE)
-			{
-				if(bis.param.username != bis.GetUsername())
-				{
-					cout << "     " << bis.param.username << " has create room - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")"<< endl;
-				}else{
-					cout << "     Create room complete. - " << bis.param.room << " : MaxUser(" << bis.param.maxUser << ")"<< endl;
-					bis.JoinRoom(bis.param.room);
-				}
-			}
-			else if(bis.param.status ==  CREATEROOM_FAIL)
-			{
-				cout << "     Room Exist." << endl;
-			}
-			else if(bis.param.status ==  JOINROOM_COMPLETE)
-			{
-				if(bis.param.room == bis.GetRoom())
-				{
-					if(bis.param.username != bis.GetUsername())
-						cout << "     " << bis.param.username << " has join room. [" << bis.param.countUser << "/" << bis.param.maxUser << "]" << endl;
-					else
-						cout << "     Join room complete. [" << bis.param.countUser << "/" << bis.param.maxUser << "]" << endl;
-				}
-			}
-			else if(bis.param.status ==  JOINROOM_FAIL)
-			{
-				cout << "     Can't join room." << endl;
-			}
-			else if(bis.param.status ==  LEAVEROOM_COMPLETE)
-			{
-				if(bis.param.username != bis.GetUsername())
-				{
-					cout << "     " << bis.param.username << " leave room." << endl;
-				}else{
-					cout << "     You has leave room." << endl;
-					if(bis.param.countUser == 0)
-						bis.DestroyRoom(roomLeaveTemp);
-				}
-			}
-			else if(bis.param.status ==  LEAVEROOM_FAIL)
-			{
-				cout << "     You can't leave room. Because you no room." << endl;
-			}
-			else if(bis.param.status ==  LOADROOM_COMPLETE)
-			{
-				if(bis.param.countRoom > 0)
-				{
-					cout << "     Room Count: " << bis.param.countRoom << endl;
-					for(i = 0; i < bis.param.countRoom; i++)
-					{
-						cout << "     - " << bis.param.roomNameList[i] << " [" << bis.param.roomCountUserList[i] << "/" << bis.param.roomMaxUserList[i] << "]" << endl;
-					}
-				}else{
-					cout << "     No room." << endl;
-				}
-			}
-			else if(bis.param.status ==  DESTROYROOM_COMPLETE)
-			{
-				cout << "     " << bis.param.username << " destroy room. - " << bis.param.room << endl;
-			}
-			else if(bis.param.status ==  DESTROYROOM_FAIL)
-			{
-				cout << "     Can't destroy room." << endl;
-			}
-			else if(bis.param.status ==  DISCONNECT_EVENT)
-			{
-				cout << "     " << bis.param.username << " Disconnect." << endl;
-			}
-		}else{
-			if(bis.param.status ==  DISCONNECT_EVENT)
-			{
-				cout << "     Disconnect." << endl;
-				Exit = true;
-				break;
-			}
-			else if(bis.param.status ==  SERVER_ERROR)
-			{
-				cout << "     Server Dead." << endl;
-				Exit = true;
-				break;
-			}
-		}
+		bis.ReadMessage();
 	}
 }
 
 int main(int argc, char* argv[])
 {
+	char Port_[4];
+
+	bis.ConnectComplete = &ConnectComplete;
+	bis.LoginComplete = &LoginComplete;
+	bis.LoginFail = &LoginFail;
+	bis.MessageUpdate = &MessageUpdate;
+	bis.CreateRoomComplete = &CreateRoomComplete;
+	bis.CreateRoomFail = &CreateRoomFail;
+	bis.JoinComplete = &JoinComplete;
+	bis.JoinFail = &JoinFail;
+	bis.LeaveComplete = &LeaveComplete;
+	bis.LeaveFail = &LeaveFail;
+	bis.LoadRoomComplete = &LoadRoomComplete;
+	bis.DestroyRoomComplete = &DestroyRoomComplete;
+	bis.DestroyRoomFail = &DestroyRoomFail;
+	bis.DisconnectComplete = &DisconnectComplete;
+	bis.ServerError = &ServerError;
+
 	switch(argc)
 	{
 		case 3:
@@ -228,14 +261,16 @@ int main(int argc, char* argv[])
 			strcpy(serverIP, argv[1]);
 			cout << "\nServer IP: " << serverIP << endl;
 			cout << "Server Port: ";
-			cin >> serverPort;
+			cin >> Port_;
+			serverPort = atoi(Port_);
 			cout << endl;
 			break;
 		default:
 			cout << "\nServer IP: ";
 			cin.getline(serverIP, 15);
 			cout << "Server Port: ";
-			cin >> serverPort;
+			cin >> Port_;
+			serverPort = atoi(Port_);
 			cout << endl;
 	}
 

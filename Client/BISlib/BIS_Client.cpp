@@ -1,5 +1,24 @@
 #include "BIS_Client.h"
 
+BIS_Client::BIS_Client()
+{
+	ConnectComplete = NULL;
+	LoginComplete = NULL;
+	LoginFail = NULL;
+	MessageUpdate = NULL;
+	CreateRoomComplete = NULL;
+	CreateRoomFail = NULL;
+	JoinComplete = NULL;
+	JoinFail = NULL;
+	LeaveComplete = NULL;
+	LeaveFail = NULL;
+	LoadRoomComplete = NULL;
+	DestroyRoomComplete = NULL;
+	DestroyRoomFail = NULL;
+	DisconnectComplete = NULL;
+	ServerError = NULL;
+}
+
 bool BIS_Client::Socket(char* serverIP, int serverPort)
 {
 	strcpy(ip_, serverIP);
@@ -27,7 +46,7 @@ bool BIS_Client::Connect()
 
 bool BIS_Client::Login(string username)
 {
-	if(_username != "")
+	if(isLogin_ && _username != "")
 		return false;
 
 	_usernameTemp = username;
@@ -38,13 +57,16 @@ bool BIS_Client::Login(string username)
 
 void BIS_Client::CreateRoom(string roomName, int maxUser)
 {
-	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%d", CREATEROOM_EVENT, roomName.c_str(), maxUser);
-	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	if(isLogin_)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\n%d", CREATEROOM_EVENT, roomName.c_str(), maxUser);
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
 }
 
 bool BIS_Client::JoinRoom(string roomName)
 {
-	if(_room != "")
+	if(!isLogin_ || _room != "")
 		return false;
 
 	_roomTemp = roomName;
@@ -55,28 +77,40 @@ bool BIS_Client::JoinRoom(string roomName)
 
 void BIS_Client::LeaveRoom()
 {
-	snprintf(sockMessage, sizeof(sockMessage), "%s", LEAVEROOM_EVENT);
-	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	if(isLogin_)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s", LEAVEROOM_EVENT);
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
 }
 
 void BIS_Client::LoadRoom()
 {
-	snprintf(sockMessage, sizeof(sockMessage), "%s", LOADROOM_EVENT);
-	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	if(isLogin_)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s", LOADROOM_EVENT);
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
 }
 
 void BIS_Client::DestroyRoom(string roomName)
 {
-	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", DESTROYROOM_EVENT, roomName.c_str());
-	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	if(isLogin_)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", DESTROYROOM_EVENT, roomName.c_str());
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
 }
 
 void BIS_Client::Disconnect()
 {
-	string str = DISCONNECT_EVENT;
-	string username = _username;
-	snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", str.c_str(),username.c_str());
-	send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	if(isLogin_)
+	{
+		string str = DISCONNECT_EVENT;
+		string username = _username;
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s", str.c_str(),username.c_str());
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
 }
 
 vector<string> BIS_Client::splitToVector(string in_, string sp_)
@@ -102,13 +136,12 @@ string BIS_Client::AllVecToString(vector<string> vec, int index, string spStr)
 bool BIS_Client::ReadMessage()
 {
 	vector<string> strVecSP;
-	int i,sp;
+	int i,sp,a;
 	if((n = read(sock_, sockMessage, sizeof(sockMessage)-1)) > 0)
 	{
 		sockMessage[n] = 0;
 
 		strVecSP = splitToVector(sockMessage, "\f");
-
 		for(sp = 0; sp < strVecSP.size()-1; sp++)
 		{
 			strVec = splitToVector(strVecSP[sp].c_str(), "\n");
@@ -116,10 +149,16 @@ bool BIS_Client::ReadMessage()
 			if(strVec[0] == CONNECT_COMPLETE)
 			{
 				param.status = CONNECT_COMPLETE;
+
+				if(ConnectComplete != NULL)
+					ConnectComplete();
 			}
 			else if(strVec[0] == LOGIN_EXIST)
 			{
 				param.status = LOGIN_EXIST;
+
+				if(LoginFail != NULL)
+					LoginFail(param.status);
 			}
 			else if(strVec[0] == LOGIN_COMPLETE)
 			{
@@ -132,6 +171,16 @@ bool BIS_Client::ReadMessage()
 					_username = param.username;
 					isLogin_ = true;
 				}
+
+				if(LoginComplete != NULL)
+					LoginComplete(param.username);
+			}
+			else if(strVec[0] == LOGIN_FAIL)
+			{
+				param.status = LOGIN_FAIL;
+
+				if(LoginFail != NULL)
+					LoginFail(param.status);
 			}
 			else if(strVec[0] == SEND_MESSAGE)
 			{
@@ -140,6 +189,9 @@ bool BIS_Client::ReadMessage()
 				param.username = strVec[1];
 				strVec[2] = AllVecToString(strVec, 2, "\n");
 				param.message = strVec[2];
+
+				if(MessageUpdate != NULL)
+					MessageUpdate(param.username, param.message);
 			}
 			else if(strVec[0] == CREATEROOM_COMPLETE)
 			{
@@ -148,10 +200,16 @@ bool BIS_Client::ReadMessage()
 				param.username = strVec[1];
 				param.room = strVec[2];
 				param.maxUser = atoi(strVec[3].c_str());
+
+				if(CreateRoomComplete != NULL)
+					CreateRoomComplete(param.username, param.room, param.maxUser);
 			}
 			else if(strVec[0] == CREATEROOM_FAIL)
 			{
-				param.status = CREATEROOM_FAIL;	
+				param.status = CREATEROOM_FAIL;
+
+				if(CreateRoomFail != NULL)
+					CreateRoomFail();
 			}
 			else if(strVec[0] == JOINROOM_COMPLETE)
 			{
@@ -165,6 +223,16 @@ bool BIS_Client::ReadMessage()
 				{
 					_room = _roomTemp;
 				}
+
+				if(JoinComplete != NULL)
+					JoinComplete(param.username, param.room, param.maxUser, param.countUser);
+			}
+			else if(strVec[0] == JOINROOM_FAIL)
+			{
+				param.status = JOINROOM_FAIL;
+
+				if(JoinFail != NULL)
+					JoinFail();
 			}
 			else if(strVec[0] == LEAVEROOM_COMPLETE)
 			{
@@ -183,23 +251,22 @@ bool BIS_Client::ReadMessage()
 				}else{
 					param.status = "";
 				}
-			}
-			else if(strVec[0] == JOINROOM_FAIL)
-			{
-				param.status = JOINROOM_FAIL;
+
+				if(LeaveComplete != NULL)
+					LeaveComplete(param.username, param.maxUser, param.countUser);
 			}
 			else if(strVec[0] == LEAVEROOM_FAIL)
 			{
 				param.status = LEAVEROOM_FAIL;
+
+					if(LeaveFail != NULL)
+						LeaveFail();
 			}
 			else if(strVec[0] == LOADROOM_COMPLETE)
 			{
 				param.status = LOADROOM_COMPLETE;
 
-				param.roomNameList.clear();
-				param.roomMaxUserList.clear();
-				param.roomCountUserList.clear();
-
+				roomObject_.clear();
 				if(strVec[1] != NO_ROOM)
 				{
 					strVec[1] = AllVecToString(strVec, 1, "\n");
@@ -207,15 +274,21 @@ bool BIS_Client::ReadMessage()
 
 					for(i = 0; i < strVec.size(); i+=3)
 					{
-						param.roomNameList.push_back(strVec[i]);
-						param.roomMaxUserList.push_back(atoi(strVec[i+1].c_str()));
-						param.roomCountUserList.push_back(atoi(strVec[i+2].c_str()));
+						roomOb = new RoomObject();
+						roomOb->roomName = strVec[i];
+						roomOb->maxUser = atoi(strVec[i+1].c_str());
+						roomOb->countUser = atoi(strVec[i+2].c_str());
+
+						roomObject_.push_back(roomOb);
 					}
 
-					param.countRoom = param.roomNameList.size();
+					param.countRoom = roomObject_.size();
 				}else{
 					param.countRoom = 0;
 				}
+
+				if(LoadRoomComplete != NULL)
+					LoadRoomComplete(param.countRoom, roomObject_);
 			}
 			else if(strVec[0] == DESTROYROOM_COMPLETE)
 			{
@@ -223,10 +296,16 @@ bool BIS_Client::ReadMessage()
 
 				param.room = strVec[1];
 				param.username = strVec[2];
+
+				if(DestroyRoomComplete != NULL)
+					DestroyRoomComplete(param.username, param.room);
 			}
 			else if(strVec[0] == DESTROYROOM_FAIL)
 			{
 				param.status = DESTROYROOM_FAIL;
+
+				if(DestroyRoomFail != NULL)
+					DestroyRoomFail();
 			}
 			else if(strVec[0] == DISCONNECT_EVENT)
 			{
@@ -237,8 +316,10 @@ bool BIS_Client::ReadMessage()
 				if(param.username == _username)
 				{
 					close(sock_);
-					return false;
 				}
+
+				if(DisconnectComplete != NULL)
+					DisconnectComplete(param.username);
 			}else{
 				param.status = "";
 			}
@@ -247,6 +328,9 @@ bool BIS_Client::ReadMessage()
 	}else{
 		param.status = SERVER_ERROR;
 		close(sock_);
+
+		if(ServerError != NULL)
+			ServerError();
 	}
 	return false;
 }
