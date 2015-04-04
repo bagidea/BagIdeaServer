@@ -79,8 +79,6 @@ void* Input(void*)
 					bis.SendMessage(message, THIS_BIS);
 				}
 			}else{
-				if(bis.GetRoom() != "")
-					bis.DestroyRoom(bis.GetRoom());
 				bis.Disconnect();
 				Exit = true;
 			}
