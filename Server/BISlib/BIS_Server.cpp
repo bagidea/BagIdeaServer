@@ -246,6 +246,13 @@ bool BIS_Server::ReadMessage(int id)
 					snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
 					str.append(chr);
 					SendMessage(str, ROOM_BIS, id, param.room);
+
+					if(serverData.GetCountUser(param.room) == 0)
+					{
+						serverData.DestroyRoom(param.room);
+						if(DestroyRoomEvent != NULL)
+							DestroyRoomEvent(param.username, param.room);
+					}
 				}
 
 				str = DISCONNECT_EVENT;
@@ -279,6 +286,13 @@ bool BIS_Server::ReadMessage(int id)
 			snprintf(chr,sizeof(chr),"%d",serverData.GetCountUser(param.room));
 			str.append(chr);
 			SendMessage(str, ROOM_BIS, id, param.room);
+
+			if(serverData.GetCountUser(param.room) == 0)
+			{
+				serverData.DestroyRoom(param.room);
+				if(DestroyRoomEvent != NULL)
+					DestroyRoomEvent(param.username, param.room);
+			}
 		}
 
 		str = DISCONNECT_EVENT;
