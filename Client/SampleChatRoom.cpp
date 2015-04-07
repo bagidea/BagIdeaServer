@@ -75,6 +75,17 @@ void* Input(void*)
 					cout << "     Enter Message: ";
 					cin.getline(message, 50);
 					bis.SendMessage(message, ALL_BIS);
+				}
+				else if(strChk == "-alluser-")
+				{
+					bis.LoadAllUser();
+				}
+				else if(strChk == "-userinroom-")
+				{
+					cout << "     Room Name: ";
+					cin.getline(message, 50);
+					room_name = message;
+					bis.LoadUserInRoom(room_name);
 				}else{
 					bis.SendMessage(message, THIS_BIS);
 				}
@@ -191,6 +202,25 @@ void LoadRoomComplete(int countRoom, vector<RoomObject*> room)
 	}
 }
 
+void LoadUserComplete(int countUser, vector<UserObject*> user)
+{
+	int i;
+	if(countUser > 0)
+	{
+		cout << "     User Count: " << countUser << endl;
+		for(i = 0; i < countUser; i++)
+		{
+			cout << "     - " << user[i]->username << " [Room: ";
+			if(user[i]->roomName != "")
+				cout << user[i]->roomName << "]" << endl;
+			else
+				cout << "-]" << endl;
+		}
+	}else{
+		cout << "     No user." << endl;
+	}
+}
+
 void DestroyRoomComplete(string userName, string room)
 {
 	cout << "     " << userName << " destroy room. - " << room << endl;
@@ -233,6 +263,7 @@ int main(int argc, char* argv[])
 	bis.LeaveComplete = &LeaveComplete;
 	bis.LeaveFail = &LeaveFail;
 	bis.LoadRoomComplete = &LoadRoomComplete;
+	bis.LoadUserComplete = &LoadUserComplete;
 	bis.DestroyRoomComplete = &DestroyRoomComplete;
 	bis.DestroyRoomFail = &DestroyRoomFail;
 	bis.DisconnectComplete = &DisconnectComplete;

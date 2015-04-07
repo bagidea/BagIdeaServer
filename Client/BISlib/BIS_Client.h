@@ -26,12 +26,16 @@
 #define LEAVEROOM_FAIL "LEAVEROOM_FAIL"
 #define LOADROOM_EVENT "LOADROOM_EVENT"
 #define LOADROOM_COMPLETE "LOADROOM_COMPLETE"
+#define LOAD_ALLUSER_EVENT "LOAD_ALLUSER_EVENT"
+#define LOAD_USERINROOM_EVENT "LOAD_USERINROOM_EVENT"
+#define LOAD_USER_COMPLETE "LOAD_USER_COMPLETE"
 #define DESTROYROOM_EVENT "DESTROYROOM_EVENT"
 #define DESTROYROOM_COMPLETE "DESTROYROOM_COMPLETE"
 #define DESTROYROOM_FAIL "DESTROYROOM_FAIL"
 #define DISCONNECT_EVENT "DISCONNECT_EVENT"
 #define SERVER_ERROR "SERVER_ERROR"
 #define NO_ROOM "|-(Not Have Room)-|"
+#define NO_USER "|-(Not Have User)-|"
 #define THIS_BIS 0
 #define ALL_BIS 1
 
@@ -42,6 +46,12 @@ struct RoomObject
 	string roomName;
 	int maxUser;
 	int countUser;
+};
+
+struct UserObject
+{
+	string username;
+	string roomName;
 };
 
 class BIS_Client
@@ -56,6 +66,8 @@ public:
 	bool JoinRoom(string roomName);
 	void LeaveRoom();
 	void LoadRoom();
+	void LoadAllUser();
+	void LoadUserInRoom(string roomName);
 	void DestroyRoom(string roomName);
 	void Disconnect();
 
@@ -79,6 +91,7 @@ public:
 	void (*LeaveComplete)(string username, int maxUser, int countUser);
 	void (*LeaveFail)();
 	void (*LoadRoomComplete)(int countRoom, vector<RoomObject*> roomObject);
+	void (*LoadUserComplete)(int countUser, vector<UserObject*> userObject);
 	void (*DestroyRoomComplete)(string username, string roomName);
 	void (*DestroyRoomFail)();
 	void (*DisconnectComplete)(string username);
@@ -112,5 +125,7 @@ private:
 	char sockMessage[1024];
 	vector<string> strVec;
 	vector<RoomObject*> roomObject_;
+	vector<UserObject*> userObject_;
 	RoomObject* roomOb;
+	UserObject* userOb;
 };

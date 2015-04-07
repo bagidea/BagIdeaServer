@@ -200,6 +200,26 @@ bool BIS_Server::ReadMessage(int id)
 				str.append(strTemp);
 				SendMessage(str, THIS_BIS, id);
 			}
+			else if(strVec[0] == LOAD_ALLUSER_EVENT)
+			{
+				param.status = LOAD_ALLUSER_EVENT;
+
+				str = LOAD_USER_COMPLETE;
+				str.append("\n");
+				strTemp = serverData.LoadAllUser();
+				str.append(strTemp);
+				SendMessage(str, THIS_BIS, id);
+			}
+			else if(strVec[0] == LOAD_USERINROOM_EVENT)
+			{
+				param.status = LOAD_USERINROOM_EVENT;
+
+				str = LOAD_USER_COMPLETE;
+				str.append("\n");
+				strTemp = serverData.LoadUserInRoom(strVec[1]);
+				str.append(strTemp);
+				SendMessage(str, THIS_BIS, id);
+			}
 			else if(strVec[0] == DESTROYROOM_EVENT)
 			{
 				param.status = DESTROYROOM_EVENT;

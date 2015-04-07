@@ -14,6 +14,7 @@ BIS_Client::BIS_Client()
 	LeaveComplete = NULL;
 	LeaveFail = NULL;
 	LoadRoomComplete = NULL;
+	LoadUserComplete = NULL;
 	DestroyRoomComplete = NULL;
 	DestroyRoomFail = NULL;
 	DisconnectComplete = NULL;
@@ -90,6 +91,24 @@ void BIS_Client::LoadRoom()
 	if(isLogin_  == true)
 	{
 		snprintf(sockMessage, sizeof(sockMessage), "%s\f", LOADROOM_EVENT);
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
+}
+
+void BIS_Client::LoadAllUser()
+{
+	if(isLogin_  == true)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s\f", LOAD_ALLUSER_EVENT);
+		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
+	}
+}
+
+void BIS_Client::LoadUserInRoom(string roomName)
+{
+	if(isLogin_  == true)
+	{
+		snprintf(sockMessage, sizeof(sockMessage), "%s\n%s\f", LOAD_USERINROOM_EVENT, roomName.c_str());
 		send(sock_, sockMessage, strlen(sockMessage), IPPROTO_TCP);
 	}
 }
@@ -290,6 +309,36 @@ bool BIS_Client::ReadMessage()
 
 				if(LoadRoomComplete != NULL)
 					LoadRoomComplete(param.countRoom, roomObject_);
+			}
+			else if(strVec[0] == LOAD_USER_COMPLETE)
+			{
+				param.status = LOAD_USER_COMPLETE;
+
+				userObject_.clear();
+				if(strVec[1] != NO_USER)
+				{
+					strVec[1] = AllVecToString(strVec, 1, "\n");
+					strVec = splitToVector(strVec[1].c_str(), "\n");
+
+					for(i = 0; i < strVec.size(); i+=2)
+					{
+						userOb = new UserObject();
+						userOb->username = strVec[i];
+						if(strVec[i+1] != "No Room")
+							userOb->roomName = strVec[i+1];
+						else
+							userOb->roomName = "";
+
+						userObject_.push_back(userOb);
+					}
+
+					param.countUser = userObject_.size();
+				}else{
+					param.countUser = 0;
+				}
+
+				if(LoadUserComplete != NULL)
+					LoadUserComplete(param.countUser, userObject_);
 			}
 			else if(strVec[0] == DESTROYROOM_COMPLETE)
 			{

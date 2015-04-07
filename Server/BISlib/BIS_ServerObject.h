@@ -4,6 +4,7 @@
 #include <vector>
 
 #define NO_ROOM "|-(Not Have Room)-|"
+#define NO_USER "|-(Not Have User)-|"
 
 using namespace std;
 
@@ -14,6 +15,8 @@ public:
 	bool JoinRoom(int id, string roomName);
 	void LeaveRoom(int id);
 	string LoadRoom();
+	string LoadAllUser();
+	string LoadUserInRoom(string roomName);
 	bool DestroyRoom(string roomName);
 	bool CheckExistUsername(int id, string username);
 	void DestroyUserFromID(int id);

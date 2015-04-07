@@ -102,6 +102,70 @@ string BIS_ServerObject::LoadRoom()
 	return str;
 }
 
+string BIS_ServerObject::LoadAllUser()
+{
+	int i;
+	string str = "";
+	if(idList_.size() > 0)
+	{
+		for(i = 0; i < usernameList_.size(); i++)
+		{
+			str.append(usernameList_[i]);
+			str.append("\n");
+			if(userRoomList_[i] != "")
+				str.append(userRoomList_[i]);
+			else
+				str.append("No Room");
+			if(i < usernameList_.size()-1)
+				str.append("\n");
+		}
+	}else{
+		return NO_USER;
+	}
+	return str;
+}
+
+string BIS_ServerObject::LoadUserInRoom(string roomName)
+{
+	int i;
+	string str = "";
+	if(idList_.size() > 0)
+	{
+		if(roomName != "")
+		{
+			for(i = 0; i < nameRoomList_.size()+1; i++)
+			{
+				if(i == nameRoomList_.size())
+					return NO_USER;
+				if(roomName == nameRoomList_[i])
+					break;
+			}
+
+			for(i = 0; i < usernameList_.size(); i++)
+			{
+				if(userRoomList_[i] == roomName)
+				{
+					str.append(usernameList_[i]);
+					str.append("\n");
+					if(roomName != "")
+						str.append(userRoomList_[i]);
+					else
+						str.append("No Room");
+					if(i < usernameList_.size()-1)
+						str.append("\n");
+				}
+			}
+		}else{
+			return NO_USER;
+		}
+	}else{
+		return NO_USER;
+	}
+	if(str == "")
+		return NO_USER;
+	return str;
+}
+
 bool BIS_ServerObject::DestroyRoom(string roomName)
 {
 	int i,a,num;
