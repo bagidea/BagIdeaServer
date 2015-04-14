@@ -10,7 +10,7 @@
 using namespace std;
 using namespace boost;
 
-char serverIP[15];
+char serverIP[16];
 int serverPort;
 
 string strTemp;
@@ -250,7 +250,7 @@ void ServerError()
 
 int main(int argc, char* argv[])
 {
-	char Port_[4];
+	char Port_[5];
 
 	bis.ConnectComplete = &ConnectComplete;
 	bis.LoginComplete = &LoginComplete;
@@ -281,15 +281,15 @@ int main(int argc, char* argv[])
 			strcpy(serverIP, argv[1]);
 			cout << "\nServer IP: " << serverIP << endl;
 			cout << "Server Port: ";
-			cin >> Port_;
+			cin.getline(Port_, 5);
 			serverPort = atoi(Port_);
 			cout << endl;
 			break;
 		default:
 			cout << "\nServer IP: ";
-			cin.getline(serverIP, 15);
+			cin.getline(serverIP, 16);
 			cout << "Server Port: ";
-			cin >> Port_;
+			cin.getline(Port_, 5);
 			serverPort = atoi(Port_);
 			cout << endl;
 	}

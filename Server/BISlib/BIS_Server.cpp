@@ -286,6 +286,11 @@ bool BIS_Server::ReadMessage(int id)
 		}
 		return true;
 	}else{
+		param.status = "";
+		
+		if(serverData.GetUsernameFromID(id) == "")
+			return false;
+
 		param.status = DISCONNECT_EVENT;
 
 		param.username = serverData.GetUsernameFromID(id);
