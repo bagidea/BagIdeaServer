@@ -312,6 +312,18 @@ int main(int argc, char* argv[])
 	}
 	cout << "Success." << endl << endl;
 
+	cout << "::::-------------------- Menu ---------------------::::" << endl;
+	cout << "          -room-       Show all room." << endl;
+	cout << "          -create-     Create room." << endl;
+	cout << "          -join-       Join room." << endl;
+	cout << "          -leave-      Leave room." << endl;
+	cout << "          -myroom-     Show your room." << endl;
+	cout << "          -alluser-    Show all user." << endl;
+	cout << "          -userinroom- Show user in room." << endl;
+	cout << "          -allchat-    Send message to all user." << endl;
+	cout << "          -exit-       Close program." << endl;
+	cout << "::::-----------------------------------------------::::" << endl << endl;
+
 	cout << ":::::::::::::::::::::: StartChat ::::::::::::::::::::::" << endl << endl;
 
 	pthread_t Input_;
